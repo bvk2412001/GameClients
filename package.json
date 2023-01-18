@@ -1,0 +1,12 @@
+{
+  "name": "ClientsGame",
+  "uuid": "a08a03f5-7e26-4889-bdfa-d4a57b7e78ec",
+  "version": "3.6.2",
+  "creator": {
+    "version": "3.6.2"
+  },
+  "dependencies": {
+    "@types/node": "^18.11.18",
+    "dotenv": "^16.0.3"
+  }
+}
