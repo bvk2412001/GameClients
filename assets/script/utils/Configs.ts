@@ -27,6 +27,7 @@ class Configs {
     public static DEFAUL_FRAME_BOX_SHIP = 0
     public static CHOISE_FRAME_BOX_SHIP = 1
     public static HIT_FRAME_BOX_SHIP = 2
+    public static HIT_FAULT_FRAME_BOX_SHIP = 3
 
     // Vi tri sprite boxBullet
     public static DEFAUL_FRAME_BOX_BULLET = 0

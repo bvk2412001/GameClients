@@ -1,4 +1,5 @@
 import { _decorator, Component, Node, SpriteFrame, Input, Sprite } from 'cc';
+import { Configs } from '../utils/Configs';
 const { ccclass, property } = _decorator;
 
 @ccclass('BoxBulletController')
@@ -23,7 +24,7 @@ export class BoxBulletController extends Component {
         this._j = value;
     }
     
-    private _typeBox: number;
+    private _typeBox: number = Configs.DEFAUL_FRAME_BOX_BULLET;
     public get typeBox(): number {
         return this._typeBox;
     }
@@ -45,6 +46,10 @@ export class BoxBulletController extends Component {
 
     private onTouchStart(){
         this.callBack(this);
+        //this.onSetFrame();
+    }
+
+    public onSetFrame(){
         this.node.getComponent(Sprite).spriteFrame = this.listSprifrace[this.typeBox];
     }
 

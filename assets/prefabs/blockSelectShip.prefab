@@ -155,6 +155,10 @@
       {
         "__uuid__": "dd1efd8e-79ef-47e9-908f-1713c3c3bcbc@f9941",
         "__expectedType__": "cc.SpriteFrame"
+      },
+      {
+        "__uuid__": "eb4766d0-9d12-4e02-b030-eec46f8f5dd4@f9941",
+        "__expectedType__": "cc.SpriteFrame"
       }
     ],
     "_id": ""

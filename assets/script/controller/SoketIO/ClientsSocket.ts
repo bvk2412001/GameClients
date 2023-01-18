@@ -1,4 +1,4 @@
-import { _decorator, Component, Node, director, Game } from 'cc';
+import { _decorator, Component, Node, director, Game, game } from 'cc';
 import { Configs } from '../../utils/Configs';
 const { ccclass, property } = _decorator;
 import { GameController } from '../GameController';
@@ -10,7 +10,7 @@ export class ClientsSocket extends Component {
     public socket;
     public static ins: ClientsSocket;
     public yourName: string | null = null;
-    public roomName: string | null = null
+    public roomName: string | null = null;
 
     start() {
         // add node là root node
@@ -34,8 +34,6 @@ export class ClientsSocket extends Component {
             play(io);
         }
     }
-
-
 
     public onMenuListenFromServer(menuController: MenuController) {
         //nhận thông báo kết nối sever thành công
@@ -92,7 +90,37 @@ export class ClientsSocket extends Component {
         })
 
         this.socket.on(Configs.CLIENTS_FIRE, (data) =>{
-            gameController.checkBoxBuletIsTrue(data);
+            if(data.data.playerName != this.yourName)
+                gameController.checkBoxBuletIsTrue(data);
+        })
+
+        this.socket.on(Configs.IS_HIT, (data)=>{
+            if(data.data.playerName == this.yourName){
+                 gameController.setFrameHitBullet(data);
+            }
+            else{
+                gameController.setFrameHitShip(data)
+            }
+        })
+        this.socket.on(Configs.NEXT_TURN, (data)=>{
+            if(data.data.playerName != this.yourName){
+                gameController.isTurn = true;
+            }
+            else{
+                gameController.isTurn = false;
+            }
+        })
+
+        this.socket.on(Configs.WIN_GAME, (data)=>{
+            console.log(data.data.playerName, ClientsSocket.ins.yourName)
+            if(data.data.playerName == ClientsSocket.ins.yourName){
+                gameController.uiWin.active = true;
+                gameController.lblWin.string = "YOU LOSE"
+            }
+            else{
+                gameController.uiWin.active = true;
+                gameController.lblWin.string = "YOU WIN"
+            }
         })
     }
 }

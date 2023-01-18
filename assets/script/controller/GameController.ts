@@ -34,22 +34,29 @@ export class GameController extends Component {
     @property(Node)
     private mapBullet: Node
 
+    @property(Node)
+    uiWin: Node
 
+    @property(Label)
+    lblWin: Label
 
     private listBoxBullet: Node[] = []
     private listBoxShip: Node[] = []
     private stateReady = StateReady.UNREADY
     private totalShip = Configs.TOTAL_SHIP;
     private shipExists = 0
-    private isTurn: boolean = false;
+    private _isTurn: boolean = true;
+    public get isTurn(): boolean {
+        return this._isTurn;
+    }
+    public set isTurn(value: boolean) {
+        this._isTurn = value;
+    }
     start() {
         this.lblName.string = ClientsSocket.ins.yourName;
         this.createBox();
         this.onShowTitleNumberShip();
         ClientsSocket.ins.onGameControllerListenFromServer(this);
-        ClientsSocket.ins.socket.on("khoa", (data) => {
-            console.log(data);
-        })
     }
     private createBox() {
         for (let i = 1; i <= 8; i++) {
@@ -60,6 +67,7 @@ export class GameController extends Component {
                 })
                 this.map.addChild(box)
                 this.listBoxShip.push(box)
+
             }
 
         }
@@ -79,18 +87,20 @@ export class GameController extends Component {
         }
     }
     onClickBoxBullet(boxBullet: BoxBulletController) {
-        if (boxBullet.typeBox === Configs.DEFAUL_FRAME_BOX_BULLET) {
-            boxBullet.typeBox = Configs.CHOISE_FRAME_BOX_BULLET;
-            const dataTranfer = {
-                data: {
-                    playerName: ClientsSocket.ins.yourName,
-                    roomName: ClientsSocket.ins.roomName,
-                    i: boxBullet.i,
-                    j: boxBullet.j
-
+        if (this.isTurn == true) {
+            if (boxBullet.typeBox === Configs.DEFAUL_FRAME_BOX_BULLET) {
+                boxBullet.typeBox = Configs.CHOISE_FRAME_BOX_BULLET;
+                const dataTranfer = {
+                    data: {
+                        playerName: ClientsSocket.ins.yourName,
+                        roomName: ClientsSocket.ins.roomName,
+                        i: boxBullet.i,
+                        j: boxBullet.j
+                    }
                 }
+                ClientsSocket.ins.socket.emit(Configs.CLIENTS_FIRE, dataTranfer)
+                boxBullet.onSetFrame();
             }
-            ClientsSocket.ins.socket.emit(Configs.CLIENTS_FIRE, dataTranfer)
         }
     }
 
@@ -102,14 +112,15 @@ export class GameController extends Component {
         if (boxSelectShip.typeBox == Configs.DEFAUL_FRAME_BOX_SHIP) {
             if (this.totalShip > 0) {
                 this.totalShip--;
-                console.log(this.totalShip);
                 boxSelectShip.typeBox = Configs.CHOISE_FRAME_BOX_SHIP;
+
             }
         }
         else {
             if (boxSelectShip.typeBox == Configs.CHOISE_FRAME_BOX_SHIP) {
                 this.totalShip++;
                 boxSelectShip.typeBox = Configs.DEFAUL_FRAME_BOX_SHIP;
+
             }
         }
 
@@ -121,43 +132,51 @@ export class GameController extends Component {
         this.listBoxShip.forEach(element => {
             let controller = element.getComponent(BoxSelectShip);
             if (controller.i == data.data.i && controller.j == data.data.j) {
-                hit = true;
-                controller.typeBox = Configs.HIT_FRAME_BOX_SHIP;
-                controller.onSetFrame();
-                const dataTranfer ={
-                    data: {
-                        playerName:data.data.playerName,
-                        roomName:data.data.roomName,
-                        i:data.data.i,
-                        j: data.data.j,
-                        isHit:true
-                    }
-                }
-                ClientsSocket.ins.socket.emit(Configs.IS_HIT, dataTranfer)
-                this.shipExists++;
-                if(this.shipExists == 5){
-                    const dataTranfer ={
+                if (controller.typeBox == Configs.CHOISE_FRAME_BOX_SHIP) {
+                    hit = true;
+                    const dataTranfer = {
                         data: {
-                            playerName:ClientsSocket.ins.yourName,
-                            roomName:data.data.roomName,
-                            isHit:true
+                            playerName: data.data.playerName,
+                            roomName: data.data.roomName,
+                            i: data.data.i,
+                            j: data.data.j,
+                            isHit: true
                         }
                     }
-                    ClientsSocket.ins.socket(Configs.DIE_ALL_SHIP
-                    )
+                    ClientsSocket.ins.socket.emit(Configs.IS_HIT, dataTranfer)
+                    this.shipExists++;
+                    console.log("ship ", this.shipExists)
+                    if (this.shipExists == 5) {
+                        const dataTranfer = {
+                            data: {
+                                playerName: ClientsSocket.ins.yourName,
+                                roomName: data.data.roomName,
+                                isHit: true
+                            }
+                        }
+                        console.log("khoa");
+                        ClientsSocket.ins.socket.emit(Configs.DIE_ALL_SHIP, dataTranfer);
+                    }
+                    return;
+
+
                 }
-                return;
+                else {
+                    controller.typeBox = Configs.HIT_FAULT_FRAME_BOX_SHIP;
+                    controller.onSetFrame();
+                    return;
+                }
             }
         });
 
-        if(hit == false){
-            const dataTranfer ={
+        if (hit == false) {
+            const dataTranfer = {
                 data: {
-                    playerName:data.data.playerName,
-                    roomName:data.data.roomName,
-                    i:data.data.i,
+                    playerName: data.data.playerName,
+                    roomName: data.data.roomName,
+                    i: data.data.i,
                     j: data.data.j,
-                    isHit:false
+                    isHit: false
                 }
             }
             ClientsSocket.ins.socket.emit(Configs.IS_HIT, dataTranfer)
@@ -179,14 +198,16 @@ export class GameController extends Component {
 
     onReady() {
         if (this.stateReady == StateReady.UNREADY) {
-            this.stateReady = StateReady.READY
-            const dataTranfer = {
-                data: {
-                    roomName: ClientsSocket.ins.roomName,
-                    playerName: ClientsSocket.ins.yourName
+            if (this.totalShip == 0) {
+                this.stateReady = StateReady.READY
+                const dataTranfer = {
+                    data: {
+                        roomName: ClientsSocket.ins.roomName,
+                        playerName: ClientsSocket.ins.yourName
+                    }
                 }
+                ClientsSocket.ins.socket.emit(Configs.CLIENT_READY, dataTranfer)
             }
-            ClientsSocket.ins.socket.emit(Configs.CLIENT_READY, dataTranfer)
         }
         else {
             this.stateReady = StateReady.UNREADY
@@ -200,11 +221,36 @@ export class GameController extends Component {
         }
     }
 
-    // setFrameHitBullet(data){
-    //     this.listBoxBullet.forEach(element => {
-    //         if(data.data.isHit ==  true)
-    //     }); 
-    // }
+    setFrameHitBullet(data) {
+        this.listBoxBullet.forEach(element => {
+            let controller = element.getComponent(BoxBulletController)
+            if (data.data.isHit == true) {
+                if (data.data.i == controller.i && data.data.j == controller.j) {
+                    element.getComponent(BoxBulletController).typeBox = Configs.HIT_FRAME_BOX_BULLET;
+                    element.getComponent(BoxBulletController).onSetFrame();
+                }
+            }
+        });
+    }
+
+    setFrameHitShip(data) {
+        this.listBoxShip.forEach(element => {
+            let controller = element.getComponent(BoxSelectShip)
+            if (data.data.isHit == true) {
+                if (data.data.i == controller.i && data.data.j == controller.j) {
+                    if (controller.typeBox == Configs.CHOISE_FRAME_BOX_SHIP) {
+                        element.getComponent(BoxSelectShip).typeBox = Configs.HIT_FRAME_BOX_SHIP;
+                        element.getComponent(BoxSelectShip).onSetFrame();
+                    }
+                    else {
+                        element.getComponent(BoxSelectShip).typeBox = Configs.HIT_FAULT_FRAME_BOX_SHIP;
+                        element.getComponent(BoxSelectShip).onSetFrame();
+                    }
+                }
+
+            }
+        })
+    }
 }
 
 

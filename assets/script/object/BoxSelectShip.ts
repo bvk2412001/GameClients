@@ -53,6 +53,8 @@ export class BoxSelectShip extends Component {
     onSetFrame(){
         this.node.getComponent(Sprite).spriteFrame = this.listSpriteFrame[this.typeBox];
     }
+
+   
 }
 
 
